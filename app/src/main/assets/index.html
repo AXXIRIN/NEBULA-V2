@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>NEBULA</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{background:#05070a;color:#d9e2df;font-family:"Courier New",monospace}
+button,input,textarea{font:inherit}
+#app{height:100%;border:1px solid #24352f;background:#080d0c;box-shadow:0 0 28px #000;position:relative;overflow:hidden}
+#intro{position:absolute;inset:0;z-index:20;background:#050807;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#ascii{font-weight:900;font-size:clamp(18px,6vw,34px);color:#43e58b;letter-spacing:3px;min-height:90px;text-align:center}
+#intro small{color:#597066;margin-top:14px}
+#main{height:100%;display:flex;flex-direction:column;opacity:0}
+.top{height:54px;display:flex;align-items:center;padding:0 10px;border-bottom:1px solid #23332d}
+.title{font-size:25px;font-weight:900;letter-spacing:3px;color:#f0f5f2}
+.controls{margin-left:auto;display:flex;gap:6px}.ctrl{width:28px;height:28px;border:1px solid #30443a;background:#0c1411;color:#b9c9c1;cursor:pointer}
+.ctrl:hover{background:#183126;color:#55ed98}
+.marquee{height:24px;overflow:hidden;white-space:nowrap;border-bottom:1px solid #18251f;color:#4b8b69;font-size:11px}
+.track{display:inline-block;padding-left:100%;animation:scroll 16s linear infinite}
+@keyframes scroll{to{transform:translateX(-100%)}}
+.body{flex:1;display:flex;min-height:0}
+.side{width:86px;border-right:1px solid #1d2c26;padding:8px 6px}
+.nav{width:100%;padding:9px 5px;margin-bottom:6px;background:#0b1210;border:1px solid #20342a;color:#769181;text-align:left;cursor:pointer}
+.nav:hover,.nav.active{color:#51e894;border-color:#357453;background:#0e1a14}
+.content{flex:1;min-width:0;padding:12px;overflow:auto}
+.panel{display:none;height:100%;flex-direction:column}.panel.active{display:flex}
+h2{font-size:15px;margin:0 0 10px;color:#55e894}.muted{color:#60756a;font-size:11px}
+.list{flex:1;overflow:auto;border:1px solid #1e3028;background:#060a09}
+.note{padding:9px;border-bottom:1px solid #18261f;cursor:pointer}.note:hover{background:#0d1712}
+.note b{color:#80e5aa}.note small{display:block;color:#53675d}
+textarea,input{background:#060a09;color:#dce9e2;border:1px solid #263b30;outline:none;padding:9px}
+textarea:focus,input:focus{border-color:#3e805e}
+.note-editor{display:none;gap:7px;flex-direction:column;height:100%}
+.note-editor.show{display:flex}.editor-row{display:flex;gap:7px}
+.btn{border:1px solid #2f5943;background:#0d1812;color:#63dd91;padding:8px 10px;cursor:pointer}.btn:hover{background:#153121}
+#terminalOut{flex:1;overflow:auto;background:#030504;border:1px solid #1e3027;padding:9px;white-space:pre-wrap;font-size:12px}
+.termline{display:flex;margin-top:7px}.termline span{color:#4fe58d;padding:9px 5px 9px 0}.termline input{flex:1}
+.chat{flex:1;overflow:auto;border:1px solid #1e3027;padding:9px}.msg{padding:7px;margin-bottom:7px;white-space:pre-wrap}.user{color:#83dba5}.ai{color:#d2ddd7}
+.chatbar{display:flex;gap:6px;margin-top:7px}.chatbar input{flex:1}
+#resize{position:absolute;right:0;bottom:0;width:20px;height:20px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 45%,#4b765f 46%,#4b765f 52%,transparent 53%,transparent 62%,#4b765f 63%,#4b765f 69%,transparent 70%)}
+#bubble{display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-weight:900;color:#48e58b;font-size:21px;cursor:pointer}
+body.minimized #app{border-radius:50%;box-shadow:0 0 18px #1b9c5b}body.minimized #bubble{display:flex}
+body.minimized #main{display:none}body.minimized #resize{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="intro"><div id="ascii"></div><small>SELF-REPAIRING BOOT SEQUENCE...</small></div>
+<div id="main">
+  <div class="top"><div class="title">NEBULA</div><div class="controls">
+    <button class="ctrl" onclick="minimize()">—</button><button class="ctrl" onclick="closeNebula()">×</button>
+  </div></div>
+  <div class="marquee"><div class="track">by @AXXIRIN in GitHub&nbsp;&nbsp; • &nbsp;&nbsp;by @AXXIRIN in GitHub&nbsp;&nbsp; • &nbsp;&nbsp;by @AXXIRIN in GitHub&nbsp;&nbsp; • &nbsp;&nbsp;</div></div>
+  <div class="body">
+    <nav class="side">
+      <button class="nav active" onclick="openPanel('notes',this)">NOTE</button>
+      <button class="nav" onclick="openPanel('terminal',this)">TERM</button>
+      <button class="nav" onclick="openPanel('ai',this)">AI</button>
+    </nav>
+    <main class="content">
+      <section id="notes" class="panel active">
+        <div style="display:flex;align-items:center;justify-content:space-between"><h2>NOTE // STORAGE</h2><button class="btn" onclick="newNote()">+ NEW</button></div>
+        <div id="noteList" class="list"></div>
+        <div id="editor" class="note-editor">
+          <input id="noteTitle" placeholder="note title">
+          <textarea id="noteBody" style="flex:1" placeholder="write something..."></textarea>
+          <div class="editor-row"><button class="btn" onclick="saveNote()">SAVE</button><button class="btn" onclick="deleteNote()">DELETE</button><button class="btn" onclick="closeEditor()">BACK</button></div>
+        </div>
+      </section>
+      <section id="terminal" class="panel">
+        <h2>TERMINAL // LOCAL SHELL</h2>
+        <div id="terminalOut">NEBULA TERMINAL\nType: help\n\n</div>
+        <div class="termline"><span>$</span><input id="termIn" autocomplete="off" placeholder="command..." onkeydown="if(event.key==='Enter')runTerm()"></div>
+      </section>
+      <section id="ai" class="panel">
+        <h2>AI CLONE // CHAT ONLY</h2>
+        <div class="muted">Set your AI endpoint/key inside the source before using a remote model.</div>
+        <div id="chat" class="chat"></div>
+        <div class="chatbar"><input id="aiIn" placeholder="ask something..." onkeydown="if(event.key==='Enter')askAI()"><button class="btn" onclick="askAI()">SEND</button></div>
+      </section>
+    </main>
+  </div>
+</div>
+<div id="resize"></div><div id="bubble" onclick="restore()">N</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let notes=JSON.parse(localStorage.getItem("nebula_notes")||"[]"), editing=-1;
+
+function boot(){
+ const target="NEBULA", ascii=["NΞBU_A","NΞBUL_","NEBUL_","NEBULA"];
+ let i=0;
+ const timer=setInterval(()=>{$("ascii").textContent=ascii[i%ascii.length];i++;if(i>=10){clearInterval(timer);$("ascii").textContent=target;setTimeout(()=>{$("intro").style.display="none";$("main").style.opacity="1";},450)}},420);
+ renderNotes();
+}
+function openPanel(id,btn){document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll(".nav").forEach(x=>x.classList.remove("active"));btn.classList.add("active")}
+function renderNotes(){ $("noteList").innerHTML=notes.map((n,i)=>`<div class="note" onclick="editNote(${i})"><b>${esc(n.title||"UNTITLED")}</b><small>${new Date(n.time).toLocaleString()}</small></div>`).join("")||'<div class="note"><span class="muted">No notes yet.</span></div>'}
+function newNote(){editing=-1;$("noteTitle").value="";$("noteBody").value="";$("noteList").style.display="none";$("editor").classList.add("show")}
+function editNote(i){editing=i;$("noteTitle").value=notes[i].title;$("noteBody").value=notes[i].body;$("noteList").style.display="none";$("editor").classList.add("show")}
+function saveNote(){let n={title:$("noteTitle").value,body:$("noteBody").value,time:Date.now()};if(editing<0)notes.unshift(n);else notes[editing]=n;localStorage.setItem("nebula_notes",JSON.stringify(notes));closeEditor()}
+function deleteNote(){if(editing>=0){notes.splice(editing,1);localStorage.setItem("nebula_notes",JSON.stringify(notes))}closeEditor()}
+function closeEditor(){$("editor").classList.remove("show");$("noteList").style.display="block";renderNotes()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function runTerm(){let input=$("termIn"),cmd=input.value.trim();if(!cmd)return;let out=$("terminalOut");out.textContent+="$ "+cmd+"\n";input.value="";
+if(cmd==="clear"){out.textContent="";return}
+if(cmd==="help"){out.textContent+="help   clear   pwd   ls   whoami   date\n";out.scrollTop=out.scrollHeight;return}
+let result=NebulaNative.shell(cmd);out.textContent+=result;out.scrollTop=out.scrollHeight}
+
+async function askAI(){
+ let input=$("aiIn"),q=input.value.trim();if(!q)return;input.value="";
+ $("chat").innerHTML+=`<div class="msg user">YOU: ${esc(q)}</div>`;
+ // Replace this demo response with your chosen model API.
+ $("chat").innerHTML+=`<div class="msg ai">NEBULA AI: AI endpoint belum dikonfigurasi. Hubungkan fungsi askAI() ke API model pilihanmu.</div>`;
+ $("chat").scrollTop=$("chat").scrollHeight;
+}
+function minimize(){NebulaNative.minimizeWindow()}
+function restore(){NebulaNative.restoreWindow()}
+function nebulaMinimized(v){document.body.classList.toggle("minimized",v)}
+function closeNebula(){NebulaNative.closeWindow()}
+
+let sx,sy,sw,sh;
+$("resize").addEventListener("pointerdown",e=>{
+ sx=e.clientX;sy=e.clientY;sw=$("app").offsetWidth;sh=$("app").offsetHeight;
+ $("resize").setPointerCapture(e.pointerId);
+});
+$("resize").addEventListener("pointermove",e=>{
+ if(sx==null)return;
+ let w=Math.max(260,sw+e.clientX-sx),h=Math.max(260,sh+e.clientY-sy);
+ NebulaNative.resizeWindow(w,h);
+});
+$("resize").addEventListener("pointerup",()=>{sx=sy=null});
+
+boot();
+</script>
+</body>
+</html>
